@@ -1,25 +1,50 @@
 """
-Inventory Management System
+Inventory Management System - Version 3
 
-git 
+Main goal:
+Add JSON persistence to the inventory system while keeping a clean backend-style architecture.
 
 Layers:
 - Domain: Product
+- Domain exceptions: ProductAlreadyExistsError, ProductNotFoundError
 - Service: InventoryManager
-- Interface: console menu
+- Persistence: JSONInventoryStorage
+- Interface: console input/output functions
 - Orchestration: main()
 
-Add product with duplicated ID
-Add product with negative price
-Add product with negative stock
-Search non-existing product
-Update non-existing product
-Delete non-existing product
+V3 improvements:
+- Products can be converted to dictionaries using Product.to_dict().
+- Products can be restored from dictionaries using Product.from_dict().
+- Inventory data is loaded from a JSON file when the program starts.
+- Inventory data is saved to a JSON file after add, update and delete operations.
+- InventoryManager keeps using dict[int, Product] internally.
+- JSON persistence uses list[dict] only for serialization.
 
-1. Validate user input in the interface
-2. Validate business rules in the service
-3. Add domain-level validation only when the entity must protect itself
+Validation strategy:
+1. The interface validates user input before creating or updating products.
+2. The Product entity validates its own fields to protect object consistency.
+3. The service layer validates business rules such as duplicated IDs or missing products.
+4. The persistence layer converts between Product objects and JSON-compatible dictionaries.
+
+Manual test cases:
+- Start the program with no JSON file.
+- Add a valid product.
+- Add a product with a duplicated ID.
+- Add a product with a negative price.
+- Add a product with a negative stock quantity.
+- Search for an existing product.
+- Search for a non-existing product.
+- Update stock for an existing product.
+- Update stock for a non-existing product.
+- Delete an existing product.
+- Delete a non-existing product.
+- Exit the program and verify that inventory_data.json is created.
+- Run the program again and verify that saved products are loaded correctly.
 """
+
+import json
+from pathlib import Path
+
 # DOMAIN EXCEPTIONS
 class ProductAlreadyExistsError(Exception):
     """Raised when trying to add a product with an existing ID."""
@@ -27,6 +52,10 @@ class ProductAlreadyExistsError(Exception):
 
 class ProductNotFoundError(Exception):
     """Raised when a product cannot be found in the inventory"""
+    pass
+
+class InventoryStorageError(Exception):
+    """Raised when inventory persistence operations fail."""
     pass
     
 # DOMAIN MODEL
@@ -125,6 +154,23 @@ class Product:
     def rename(self, new_name: str) -> None:
         self.name = new_name
 
+    def to_dict(self) -> dict:
+        return {
+            "product_id": self.product_id,
+            "name": self.name,
+            "price": self.price,
+            "stock_quantity": self.stock_quantity
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> "Product":
+        return cls(
+            product_id=data["product_id"],
+            name=data["name"],
+            price=data["price"],
+            stock_quantity=data["stock_quantity"]
+        )
+
     def __str__(self) -> str:
         return (
 
@@ -156,6 +202,11 @@ class InventoryManager:
     def list_products(self) -> list[Product]:
         """Returns all products currently stored in the inventory."""
         return list(self._products_by_id.values())
+    
+    def load_products(self, products: list[Product]) -> None:
+        """Loads multiple products into inventory"""
+        for product in products:
+            self.add_product(product)
     
     def find_product_by_id(self, product_id: int) -> Product:
         """Finds a product by its ID.
@@ -189,22 +240,62 @@ class InventoryManager:
             )
         
         del self._products_by_id[product_id]
-
+# PERSISTENCE LAYER
+class JSONInventoryStorage:
+    """Handles inventory persistence using a JSON file."""
+    
+    def __init__(self, file_path: str | Path):
+        self.file_path = Path(file_path)
+        
+    def save_products(self, products: list[Product]) -> None:
+        """Saves a list of Product objects into a JSON file."""
+        products_data = []
+        
+        for product in products:
+            products_data.append(product.to_dict())
+            
+        with self.file_path.open("w", encoding="utf-8") as file:
+            json.dump(products_data, file, indent=4)
+    
+    def load_products(self) -> list[Product]:
+        """Loads products from a JSON file.
+        
+        If the file does not exist, returns an empty list.
+        
+        Raises:
+            InventoryStorageError: if the file cannot be read or contains invalid data.
+        """
+        if not self.file_path.exists():
+            return []
+        
+        try:
+            with self.file_path.open("r", encoding="utf-8") as file:
+                products_data = json.load(file)
+            
+            products = [Product.from_dict(product_data) for product_data in products_data]
+            return products
+        
+        except json.JSONDecodeError as e:
+            raise InventoryStorageError(f"Invalid JSON format in {self.file_path.name}: {e}")
+        except (KeyError, TypeError, ValueError) as e:
+            raise InventoryStorageError(f"Invalid product data structure: {e}")
+    
 # INTERFACE
 def show_menu() -> None:
-        print("\n=== INVENTORY SYSTEM (V2) ===")
+        print("\n=== INVENTORY SYSTEM (V3 - JSON) ===")
         print("1. Add product")
         print("2. List products")
         print("3. Finds product by ID")
         print("4. Update product stock.")
-        print("5. Delete product")
+        print("5. Update product price")
+        print("6. Delete product")
         print("0. Exit")
 
 def ask_option() -> str:
     while True:
         option = input("Choose an option: ").strip()
         
-        if option in ("0", "1", "2", "3", "4", "5"):
+        if option in ("0", "1", "2", "3", "4", "5", "6"):
             return option
         
         print("Invalid option")
@@ -258,11 +349,7 @@ def ask_product_data() -> Product:
         stock_quantity=stock_quantity
     )
 def print_product(product: Product) -> None:
-    print(
-        f"[{product.product_id}] {product.name} | "
-        f"Price: {product.price:.2f} | "
-        f"Stock: {product.stock_quantity}"
-    )
+    print(product)
         
 def print_products(products: list[Product]) -> None:
     if not products:
@@ -270,22 +357,29 @@ def print_products(products: list[Product]) -> None:
         return
 
     for product in products:
-        print(
-            f"[{product.product_id}] {product.name} | "
-            f"Price: {product.price:.2f} | "
-            f"Stock: {product.stock_quantity}"
-        )
+        print(product)
 
 
 # ORCHESTRATION
-def main():
+def main() -> None:
     manager = InventoryManager()
+    storage = JSONInventoryStorage("inventory_data.json")
+    
+    try:
+        products = storage.load_products()
+        manager.load_products(products)
+        print("Inventory data loaded successfully.")
+    
+    except InventoryStorageError as error:
+        print(f"Could not load inventory data: {error}")
     
     while True:
         show_menu()
         option = ask_option()
         
         if option == "0":
+            storage.save_products(manager.list_products())
+            print("Inventory data saved successfully.")
             print("Exiting inventory system.")
             break
         
@@ -293,7 +387,9 @@ def main():
             try:
                 product = ask_product_data() # creates the Product
                 manager.add_product(product) # store the Product
-            
+                storage.save_products(manager.list_products())
+                print("Product added successfully.")
+
             except ProductAlreadyExistsError as error:
                 print(error)
             
@@ -320,16 +416,32 @@ def main():
 
             try:
                 manager.update_stock(product_id, new_stock_quantity)
+                storage.save_products(manager.list_products())
                 print("Stock updated successfully.")
+            
+            except ProductNotFoundError as error:
+                print(error)
+        
+        elif option == "5":
+            product_id = ask_positive_int("Product ID: ")
+            new_price = ask_positive_float("New price: ")
+            
+            try:
+                manager.update_price(product_id, new_price)
+                storage.save_products(manager.list_products())
+                print("Price updated successfully.")
+                
             except ProductNotFoundError as error:
                 print(error)
                 
-        elif option == "5":
+        elif option == "6":
             product_id = ask_positive_int("Product ID: ")
             
             try:
                 manager.delete_product(product_id)
+                storage.save_products(manager.list_products())
                 print("Product deleted successfully.")
+            
             except ProductNotFoundError as error:
                 print(error)
 
