@@ -7,18 +7,18 @@ Manage products in memory through a console menu.
 Main entity:
 Product
 
+Layers:
+- Domain: Product
+- Service: InventoryManager
+- Interface: console menu
+- Orchestration: main()
+
 Main actions:
 - Add product
 - List products
 - Search product
 - Update stock
 - Delete product
-
-Layers:
-- Domain: Product
-- Service: InventoryManager
-- Interface: console menu
-- Orchestration: main()
 
 Add product with duplicated ID
 Add product with negative price
@@ -71,7 +71,7 @@ class Product:
         if not isinstance(name, str):
             raise TypeError("Name must be a string.")
         
-        name = name.strip()
+        name.strip()
         
         if not name:
             raise ValueError("Name cannot be empty.")
@@ -86,7 +86,7 @@ class Product:
         if price < 0:
             raise ValueError("Price must be zero or greater.")
         
-        return float(price)
+        return price
     
     @staticmethod
     def _validate_stock_quantity(stock_quantity: int) -> int:
@@ -180,6 +180,7 @@ class InventoryManager:
             raise ProductNotFoundError(
                 f"Product with ID {product_id} was not found"
             )
+        
         return product 
     
     def update_stock(self, product_id: int, new_stock_quantity: int) -> None:
@@ -207,7 +208,7 @@ def show_menu() -> None:
         print("1. Add product")
         print("2. List products")
         print("3. Finds product by ID")
-        print("4. Update product stock.")
+        print("4. Update product stock")
         print("5. Delete product")
         print("0. Exit")
 
@@ -223,11 +224,12 @@ def ask_option() -> str:
 def ask_non_empty_text(message: str) -> str:
     while True:
         text = input(message).strip()
+        str(text)
         
         if text:
             return text
         
-        print("It cannot be empty")
+        print("It cannot be empty.")
         
 def ask_positive_int(message: str) -> int:
 

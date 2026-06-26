@@ -78,7 +78,7 @@ def show_menu() -> None:
         print("1. Add product")
         print("2. List products")
         print("3. Finds product by ID")
-        print("4. Update product stock.")
+        print("4. Update product stock")
         print("5. Delete product")
         print("0. Exit")
 

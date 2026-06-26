@@ -41,7 +41,6 @@ Manual test cases:
 - Exit the program and verify that inventory_data.json is created.
 - Run the program again and verify that saved products are loaded correctly.
 """
-
 import json
 from pathlib import Path
 
@@ -234,16 +233,15 @@ class InventoryManager:
     
     def delete_product(self, product_id: int) -> None:
         """Removes a product from the inventory."""
-        if product_id not in self._products_by_id:
+        if product_id in self._products_by_id:
             raise ProductNotFoundError(
                 f"Product with ID {product_id} was not found"
             )
-        
         del self._products_by_id[product_id]
+        
 # PERSISTENCE LAYER
 class JSONInventoryStorage:
     """Handles inventory persistence using a JSON file."""
-    
     def __init__(self, file_path: str | Path):
         self.file_path = Path(file_path)
         
@@ -272,7 +270,12 @@ class JSONInventoryStorage:
             with self.file_path.open("r", encoding="utf-8") as file:
                 products_data = json.load(file)
             
-            products = [Product.from_dict(product_data) for product_data in products_data]
+            products = []
+
+            for product_data in products_data:
+                product = Product.from_dict(product_data)
+                products.append(product)
+
             return products
         
         except json.JSONDecodeError as e:
@@ -283,13 +286,13 @@ class JSONInventoryStorage:
 # INTERFACE
 def show_menu() -> None:
         print("\n=== INVENTORY SYSTEM (V3 - JSON) ===")
-        print("1. Add product")
-        print("2. List products")
-        print("3. Finds product by ID")
+        print("1. Add product.")
+        print("2. List products.")
+        print("3. Finds product by ID.")
         print("4. Update product stock.")
-        print("5. Update product price")
-        print("6. Delete product")
-        print("0. Exit")
+        print("5. Update product price.")
+        print("6. Delete product.")
+        print("0. Exit.")
 
 def ask_option() -> str:
     while True:
@@ -361,7 +364,7 @@ def print_products(products: list[Product]) -> None:
 
 
 # ORCHESTRATION
-def main() -> None:
+def main():
     manager = InventoryManager()
     storage = JSONInventoryStorage("inventory_data.json")
     
