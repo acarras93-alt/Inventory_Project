@@ -2,7 +2,7 @@ Inventory Management System - Version 4
 
 Orverview
 
-Inventory Management System is a console-based CRUD application developed in Pyhton 3.12.
+Inventory Management System is a console-based CRUD application developed in Pyhton 3.14.
 
 The project manages products within a store inventory while progressively applying backend software engineering principles such as separation of responsibilities, domain validation and the Repository Pattern.
 
@@ -97,12 +97,39 @@ The interface contains no business logic.
 
 Technologies
 
-- Python 3.12
+- Python 3.14
 - Object-Oriented Programming
 - Repository Pattern
 - JSON persistence
 - Type hints
 - Abstract Base Classes (ABC)
+
+Development Setup
+
+Create and activate the Python 3.14 virtual environment:
+
+```bash
+python3.14 -m venv venv
+source venv/bin/activate
+```
+
+Install the development dependency group:
+
+```bash
+python -m pip install --group dev
+```
+
+Run the active-code quality check:
+
+```bash
+python -m ruff check .
+```
+
+Run the test suite once the `tests/` directory is introduced:
+
+```bash
+python -m pytest
+```
 
 What I Learned
 
