@@ -540,6 +540,159 @@ def print_products(products: list[Product]) -> None:
         print(product)
 
 
+def handle_add_product(service: InventoryService) -> None:
+    try:
+        product_id = ask_positive_int("Product ID: ")
+        name = ask_non_empty_text("Product name: ")
+        price = ask_positive_float("Product price: ")
+        stock_quantity = ask_positive_int("Stock quantitty: ")
+
+        service.add_product(
+            product_id=product_id,
+            name=name,
+            price=price,
+            stock_quantity=stock_quantity,
+        )
+        print("Product added successfully.")
+
+    except ProductAlreadyExistsError as error:
+        print(error)
+
+    except InventoryStorageError as error:
+        print(f"Storage error: {error}")
+
+    except TypeError as error:
+        print(f"Invalid product data: {error}")
+
+    except ValueError as error:
+        print(f"Invalid product data: {error}")
+
+
+def handle_list_products(service: InventoryService) -> None:
+    try:
+        products = service.list_products()
+        print(products)
+
+    except InventoryStorageError as error:
+        print(f"Storage error: {error}")
+
+
+def handle_find_product(service: InventoryService) -> None:
+    product_id = ask_positive_int("Product ID: ")
+
+    try:
+        product = service.find_product_by_id(product_id)
+        print(product)
+
+    except ProductNotFoundError as error:
+        print(error)
+
+    except InventoryStorageError as error:
+        print(f"Storage error: {error}")
+
+
+def handle_rename_product(service: InventoryService) -> None:
+    product_id = ask_positive_int("Product ID: ")
+    new_name = ask_non_empty_text("New product name: ")
+
+    try:
+        service.rename_product(product_id, new_name)
+        print("Stock renamed successfully.")
+
+    except ProductNotFoundError as error:
+        print(error)
+
+    except InventoryStorageError as error:
+        print(f"Storage error: {error}")
+
+    except TypeError as error:
+        print(f"Invalid product data: {error}")
+
+    except ValueError as error:
+        print(f"Invalid product data: {error}")
+
+
+def handle_update_price(service: InventoryService) -> None:
+    product_id = ask_positive_int("Product ID: ")
+    new_price = ask_positive_float("New price: ")
+
+    try:
+        service.update_price(product_id, new_price)
+        print("Product price updated successfully.")
+
+    except ProductNotFoundError as error:
+        print(error)
+
+    except InventoryStorageError as error:
+        print(f"Storage error: {error}")
+
+    except TypeError as error:
+        print(f"Invalid product data: {error}")
+
+    except ValueError as error:
+        print(f"Invalid product data: {error}")
+
+
+def handle_update_stock(service: InventoryService) -> None:
+    product_id = ask_positive_int("Product ID: ")
+    new_stock_quantity = ask_positive_int("New stock quantity: ")
+
+    try:
+        service.update_stock(product_id, new_stock_quantity)
+        print("Product stock updated successfully.")
+
+    except ProductNotFoundError as error:
+        print(error)
+
+    except InventoryStorageError as error:
+        print(f"Storage error: {error}")
+
+    except TypeError as error:
+        print(f"Invalid product data: {error}")
+
+    except ValueError as error:
+        print(f"Invalid product data: {error}")
+
+
+def handle_delete_product(service: InventoryService) -> None:
+    product_id = ask_positive_int("Product ID: ")
+
+    try:
+        service.delete_product(product_id)
+        print("Product deleted successfully.")
+
+    except ProductNotFoundError as error:
+        print(error)
+
+    except InventoryStorageError as error:
+        print(f"Storage error: {error}")
+
+
+def run_inventory_menu(service: InventoryService) -> None:
+    option_handlers = {
+        "1": handle_add_product,
+        "2": handle_list_products,
+        "3": handle_find_product,
+        "4": handle_rename_product,
+        "5": handle_update_price,
+        "6": handle_update_stock,
+        "7": handle_delete_product,
+    }
+
+    while True:
+        show_menu()
+        option = ask_option()
+
+        if option == "0":
+            print("Exiting inventory system.")
+            break
+
+        handler = option_handlers.get(option)
+
+        if handler is not None:
+            handler(service)
+
+
 # ORCHESTRATION
 def main() -> None:
     """Composition root.
@@ -555,134 +708,7 @@ def main() -> None:
     repository = JSONproductRepository("inventory_data.json")
     service = InventoryService(repository)
 
-    while True:
-        show_menu()
-        option = ask_option()
-
-        if option == "0":
-            print("Exiting inventory system.")
-            break
-
-        elif option == "1":
-            try:
-                product_id = ask_positive_int("Product ID: ")
-                name = ask_non_empty_text("Product name: ")
-                price = ask_positive_float("Product price: ")
-                stock_quantity = ask_positive_int("Stock quantitty: ")
-
-                service.add_product(
-                    product_id=product_id,
-                    name=name,
-                    price=price,
-                    stock_quantity=stock_quantity,
-                )
-                print("Product added successfully.")
-
-            except ProductAlreadyExistsError as error:
-                print(error)
-
-            except InventoryStorageError as error:
-                print(f"Storage error: {error}")
-
-            except TypeError as error:
-                print(f"Invalid product data: {error}")
-
-            except ValueError as error:
-                print(f"Invalid product data: {error}")
-
-        elif option == "2":
-            try:
-                products = service.list_products()
-                print(products)
-
-            except InventoryStorageError as error:
-                print(f"Storage error: {error}")
-
-        elif option == "3":
-            product_id = ask_positive_int("Product ID: ")
-
-            try:
-                product = service.find_product_by_id(product_id)
-                print(product)
-
-            except ProductNotFoundError as error:
-                print(error)
-
-            except InventoryStorageError as error:
-                print(f"Storage error: {error}")
-
-        elif option == "4":
-            product_id = ask_positive_int("Product ID: ")
-            new_name = ask_non_empty_text("New product name: ")
-
-            try:
-                service.rename_product(product_id, new_name)
-                print("Stock renamed successfully.")
-
-            except ProductNotFoundError as error:
-                print(error)
-
-            except InventoryStorageError as error:
-                print(f"Storage error: {error}")
-
-            except TypeError as error:
-                print(f"Invalid product data: {error}")
-
-            except ValueError as error:
-                print(f"Invalid product data: {error}")
-
-        elif option == "5":
-            product_id = ask_positive_int("Product ID: ")
-            new_price = ask_positive_float("New price: ")
-
-            try:
-                service.update_price(product_id, new_price)
-                print("Product price updated successfully.")
-
-            except ProductNotFoundError as error:
-                print(error)
-
-            except InventoryStorageError as error:
-                print(f"Storage error: {error}")
-
-            except TypeError as error:
-                print(f"Invalid product data: {error}")
-
-            except ValueError as error:
-                print(f"Invalid product data: {error}")
-
-        elif option == "6":
-            product_id = ask_positive_int("Product ID: ")
-            new_stock_quantity = ask_positive_int("New stock quantity: ")
-
-            try:
-                service.update_stock(product_id, new_stock_quantity)
-                print("Product stock updated successfully.")
-
-            except ProductNotFoundError as error:
-                print(error)
-
-            except InventoryStorageError as error:
-                print(f"Storage error: {error}")
-
-            except TypeError as error:
-                print(f"Invalid product data: {error}")
-
-            except ValueError as error:
-                print(f"Invalid product data: {error}")
-
-        elif option == "7":
-            product_id = ask_positive_int("Product ID: ")
-
-            try:
-                service.delete_product(product_id)
-                print("Product deleted successfully.")
-
-            except ProductNotFoundError as error:
-                print(error)
-
-            except InventoryStorageError as error:
-                print(f"Storage error: {error}")
+    run_inventory_menu(service)
 
 
 if __name__ == "__main__":
